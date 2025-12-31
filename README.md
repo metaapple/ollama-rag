@@ -11,6 +11,8 @@ Ollama의 로컬 LLM (예: llama3, mistral 등)을 활용해 외부 API 없이 �
 
 <img width="1378" height="339" alt="스크린샷 2025-12-31 12 14 29" src="https://github.com/user-attachments/assets/e3de7fe4-c21a-48e3-ae76-f07d9c7d9ccb" />
 
+- 관련 ppt : https://docs.google.com/presentation/d/1TA6n-o3OZ52CS_nyF7D4h22mpbq4tmlYrneT1y0BOmM/edit?usp=sharing 
+
 
 ## 특징
 
