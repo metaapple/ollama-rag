@@ -9,6 +9,9 @@ Ollama의 로컬 LLM (예: llama3, mistral 등)을 활용해 외부 API 없이 �
 ![Ollama Logo](https://ollama.com/public/ollama.png)
 <!-- Ollama 공식 로고 예시 -->
 
+<img width="1378" height="339" alt="스크린샷 2025-12-31 12 14 29" src="https://github.com/user-attachments/assets/e3de7fe4-c21a-48e3-ae76-f07d9c7d9ccb" />
+
+
 ## 특징
 
 - **로컬 실행**: Ollama를 통해 모든 LLM 추론이 로컬에서 수행됩니다. (OpenAI API 불필요)
