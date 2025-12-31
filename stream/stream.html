@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gemma3 Streaming Test</title>
+</head>
+<body>
+    <h2>응답:</h2>
+    <pre id="output"></pre>
+    <input type="text" id="prompt" placeholder="질문 입력" style="width: 80%;">
+    <button onclick="send()">전송</button>
+
+    <script>
+        function send() {
+            const prompt = document.getElementById("prompt").value;
+            const output = document.getElementById("output");
+            output.textContent = "";
+
+            const eventSource = new EventSource(`/chat`, {
+                // EventSource는 GET만 지원하므로, POST를 대체하기 위해 fetch 사용 추천
+            });
+            // 위 방법 대신 fetch + ReadableStream 사용 (더 유연함)
+            fetch("http://localhost:8000/chat", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({prompt: prompt})
+            })
+            .then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+
+                function read() {
+                    reader.read().then(({done, value}) => {
+                        if (done) {
+                            output.textContent += "\n\n=== 완료 ===\n";
+                            return;
+                        }
+                        buffer += decoder.decode(value, {stream: true});
+                        const lines = buffer.split("\n\n");
+                        buffer = lines.pop();  // 마지막 불완전한 부분 보관
+                        for (const line of lines) {
+                            if (line.startsWith("data: ")) {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.response) output.textContent += data.response;
+                                if (data.done) output.textContent += "\n\n=== 완료 ===\n";
+                            }
+                        }
+                        read();
+                    });
+                }
+                read();
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ollama 로컬 AI 데모</title>
+  <!-- Axios CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; background: #f8f9fa; }
+    h1 { text-align: center; color: #333; }
+    .tab { overflow: hidden; border: 1px solid #ccc; background-color: #f1f1f1; border-radius: 8px 8px 0 0; }
+    .tab button { background-color: inherit; float: left; border: none; outline: none; cursor: pointer; padding: 14px 16px; transition: 0.3s; font-size: 16px; }
+    .tab button:hover { background-color: #ddd; }
+    .tab button.active { background-color: #fff; border-bottom: 3px solid #007bff; }
+    .tabcontent { display: none; padding: 30px; border: 1px solid #ccc; border-top: none; background: white; border-radius: 0 0 8px 8px; }
+    textarea, input[type="text"], input[type="number"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    button.submit { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    button.submit:hover { background: #0056b3; }
+    .response { margin-top: 20px; padding: 15px; background: #e9f7ef; border-left: 4px solid #28a745; white-space: pre-wrap; min-height: 50px; }
+    .chat-box { height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #f8f9fa; margin-bottom: 10px; border-radius: 4px; }
+    .chat-message { margin: 10px 0; padding: 10px; border-radius: 8px; }
+    .user { text-align: right; background: #007bff; color: white; align-self: flex-end; }
+    .ai { text-align: left; background: #e9ecef; color: #333; }
+    .error { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; }
+  </style>
+</head>
+<body>
+  <h1>Ollama 로컬 AI 데모 (Axios 버전)</h1>
+
+  <div class="tab">
+    <button class="tablinks active" onclick="openTab(event, 'Chat')">챗봇</button>
+    <button class="tablinks" onclick="openTab(event, 'Summarize')">텍스트 요약</button>
+    <button class="tablinks" onclick="openTab(event, 'Translate')">영→한 번역</button>
+    <button class="tablinks" onclick="openTab(event, 'Sentiment')">감정 분석</button>
+    <button class="tablinks" onclick="openTab(event, 'Brainstorm')">아이디어 브레인스토밍</button>
+    <button class="tablinks" onclick="openTab(event, 'Poem')">시 쓰기</button>
+    <button class="tablinks" onclick="openTab(event, 'Recipe')">레시피 생성</button>
+    <button class="tablinks" onclick="openTab(event, 'Names')">이름 제안</button>
+  </div>
+
+  <!-- 1. 챗봇 -->
+  <div id="Chat" class="tabcontent" style="display: block;">
+    <h2>챗봇 (대화 유지)</h2>
+    <div id="chatBox" class="chat-box"></div>
+    <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." />
+    <button class="submit" onclick="sendChat()">전송</button>
+  </div>
+
+  <!-- 2. 텍스트 요약 -->
+  <div id="Summarize" class="tabcontent">
+    <h2>텍스트 요약기</h2>
+    <textarea id="summarizeText" rows="8" placeholder="요약할 긴 텍스트를 입력하세요..."></textarea><br>
+    <button class="submit" onclick="summarize()">요약하기</button>
+    <div id="summarizeResult" class="response">결과가 여기에 표시됩니다.</div>
+  </div>
+
+  <!-- 3. 번역 -->
+  <div id="Translate" class="tabcontent">
+    <h2>영어 → 한국어 번역</h2>
+    <textarea id="translateText" rows="6" placeholder="번역할 영어 문장을 입력하세요..."></textarea><br>
+    <button class="submit" onclick="translateText()">번역하기</button>
+    <div id="translateResult" class="response">결과가 여기에 표시됩니다.</div>
+  </div>
+
+  <!-- 4. 감정 분석 -->
+  <div id="Sentiment" class="tabcontent">
+    <h2>감정 분석기</h2>
+    <textarea id="sentimentText" rows="5" placeholder="감정을 분석할 문장을 입력하세요..."></textarea><br>
+    <button class="submit" onclick="analyzeSentiment()">분석하기</button>
+    <div id="sentimentResult" class="response">결과가 여기에 표시됩니다.</div>
+  </div>
+
+  <!-- 5. 브레인스토밍 -->
+  <div id="Brainstorm" class="tabcontent">
+    <h2>아이디어 브레인스토밍</h2>
+    <input type="text" id="brainstormTopic" placeholder="주제 (예: 집에서 할 수 있는 부업)" />
+    <input type="number" id="brainstormCount" value="5" min="1" max="10" />
+    <button class="submit" onclick="brainstorm()">아이디어 생성</button>
+    <div id="brainstormResult" class="response">결과가 여기에 표시됩니다.</div>
+  </div>
+
+    <!-- 6. 시 쓰기 -->
+  <div id="Poem" class="tabcontent">
+    <h2>시 쓰기 도우미</h2>
+    <input type="text" id="poemTopic" placeholder="시의 주제 (예: 가을 비, 첫사랑, 고향)" />
+    <input type="text" id="poemStyle" placeholder="스타일 (예: 현대시, 시조, 자유시)" value="현대시" />
+    <button class="submit" onclick="writePoem()">시 지어주기</button>
+    <div id="poemResult" class="response">시가 여기에 나타납니다.</div>
+  </div>
+
+  <!-- 7. 레시피 생성기 -->
+  <div id="Recipe" class="tabcontent">
+    <h2>레시피 생성기</h2>
+    <textarea id="recipeIngredients" rows="3" placeholder="가지고 있는 재료를 쉼표로 구분 (예: 계란, 토마토, 양파, 치즈)"></textarea>
+    <div style="margin: 10px 0;">
+      <label>인분: <input type="number" id="recipeServings" value="2" min="1" max="10" style="width:80px;" /></label>
+      <label style="margin-left:20px;">난이도:
+        <select id="recipeDifficulty">
+          <option value="쉬움">쉬움</option>
+          <option value="보통">보통</option>
+          <option value="어려움">어려움</option>
+        </select>
+      </label>
+    </div>
+    <button class="submit" onclick="generateRecipe()">레시피 만들어줘</button>
+    <div id="recipeResult" class="response">레시피가 여기에 나타납니다.</div>
+  </div>
+
+  <!-- 8. 이름 제안 -->
+  <div id="Names" class="tabcontent">
+    <h2>이름 지어주기 도우미</h2>
+    <select id="nameCategory">
+      <option value="아기">아기 이름</option>
+      <option value="강아지">강아지 이름</option>
+      <option value="고양이">고양이 이름</option>
+      <option value="프로젝트">프로젝트 이름</option>
+      <option value="카페">카페 이름</option>
+      <option value="브랜드">브랜드 이름</option>
+    </select>
+    <select id="nameGender" style="margin-left:10px;">
+      <option value="중성">중성</option>
+      <option value="남자">남자</option>
+      <option value="여자">여자</option>
+    </select>
+    <input type="text" id="nameVibe" placeholder="느낌 (예: 귀여운, 세련된, 따뜻한) - 선택" style="margin-top:10px;" />
+    <div style="margin:10px 0;">
+      <label>제안 개수: <input type="number" id="nameCount" value="5" min="3" max="10" style="width:80px;" /></label>
+    </div>
+    <button class="submit" onclick="suggestNames()">이름 제안해줘</button>
+    <div id="namesResult" class="response">이름들이 여기에 나타납니다.</div>
+  </div>
+  <script>
+    const API_URL = "http://127.0.0.1:8000";
+
+    function openTab(evt, tabName) {
+      const tabcontent = document.getElementsByClassName("tabcontent");
+      for (let i = 0; i < tabcontent.length; i++) tabcontent[i].style.display = "none";
+      const tablinks = document.getElementsByClassName("tablinks");
+      for (let i = 0; i < tablinks.length; i++) tablinks[i].className = tablinks[i].className.replace(" active", "");
+      document.getElementById(tabName).style.display = "block";
+      evt.currentTarget.className += " active";
+    }
+
+    // 공통 에러 처리 함수
+    function handleError(err, resultElementId) {
+      console.error(err);
+      const msg = err.response?.data?.detail || err.message || "서버 연결 실패";
+      document.getElementById(resultElementId).innerHTML = `<div class="error">오류: ${msg}</div>`;
+    }
+
+
+ // 1. 챗봇
+    function sendChat() {
+       // #chatInput 에 입력한 값 가지고 오기
+       input = document.getElementById("chatInput")
+       message = input.value.trim() //양쪽 공백 제거
+       // 입력을 안했으면 함수 중단
+       if (!message) return;
+
+       // 내가 입력한 값 채팅내용 부분 (#chatBox)에 올리자.
+        chatBox = document.getElementById("chatBox")
+        chatBox.innerHTML += `<div class="chat-message user"><strong>나 :</strong> ${message}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+       // axios로 내가 입력한 값 보내자.
+       axios.post("/chat", {message, session_id : "default" })
+        .then(response => {
+            //http응답을 받으면 실행되는 부분.
+            //json으로 도착한 데이터 --> response
+            //{data : {response : "ok"}}
+            chatBox.innerHTML += `<div class="chat-message ai"><strong>AI :</strong> ${response.data.response}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+        input.value = ""; //입력창 지우기
+    }
+
+    async function loadChatHistory(){
+        //axios로 로그인한 사람이 채팅한 정보를 요청해서 받아오자.
+        response = await axios.get("/chat-history/default");
+        history2 = response.data.history; //[ {}, {}, {},.... ]
+
+        console.log(history2);
+
+        //받아온 데이터로 chatBox에 넣자.
+        chatBox = document.getElementById("chatBox")
+
+        //화면에 있으면 내용한번 지우자.!
+        chatBox.innerHTML = "";
+
+        //스타일을 다르게 넣어주어야하므로 user, ai구분해서 넣어주자.
+        for (msg of history2) {
+            if (msg.role === "user") {
+                chatBox.innerHTML += `<div class="chat-message user"><strong>나:</strong>${msg.content}</div>`;
+            }else if (msg.role === "assistant") {
+                  chatBox.innerHTML += `<div class="chat-message ai"><strong>AI:</strong>${msg.content}</div>`;
+            } //if
+        } //for
+        chatBox.scrollTop = chatBox.scrollHeight;
+    } //func
+
+    window.onload = function(){
+    //브라우저에 dom tree가 로드되면 redis에 있는 채팅목록을 불러오자.!!!
+        loadChatHistory();
+    }
+
+    document.getElementById("chatInput").addEventListener("keypress", e => {
+      if (e.key === "Enter") sendChat();
+    });
+
+    // 2. 요약
+    function summarize() {
+      const text = document.getElementById("summarizeText").value.trim();
+      if (!text) return;
+      document.getElementById("summarizeResult").innerHTML = "처리 중...";
+
+      axios.post(`${API_URL}/summarize`, { text })
+        .then(res => {
+          document.getElementById("summarizeResult").innerHTML = res.data.summary;
+        })
+        .catch(err => handleError(err, "summarizeResult"));
+    }
+
+    // 3. 번역
+    function translateText() {
+      const text = document.getElementById("translateText").value.trim();
+      if (!text) return;
+      document.getElementById("translateResult").innerHTML = "번역 중...";
+
+      axios.post(`/translate`, { text })
+        .then(res => {
+          document.getElementById("translateResult").innerHTML = res.data.translation;
+        })
+        .catch(err => handleError(err, "translateResult"));
+    }
+
+    // 4. 감정 분석
+    function analyzeSentiment() {
+      const text = document.getElementById("sentimentText").value.trim();
+      if (!text) return;
+      document.getElementById("sentimentResult").innerHTML = "분석 중...";
+
+      axios.post(`/sentiment`, { text })
+        .then(res => {
+          document.getElementById("sentimentResult").innerHTML = `<strong>감정:</strong> ${res.data.sentiment}`;
+        })
+        .catch(err => handleError(err, "sentimentResult"));
+    }
+
+    // 5. 브레인스토밍
+    function brainstorm() {
+      const topic = document.getElementById("brainstormTopic").value.trim();
+      const count = parseInt(document.getElementById("brainstormCount").value);
+      if (!topic) return;
+      document.getElementById("brainstormResult").innerHTML = "생성 중...";
+
+      axios.post(`/brainstorm`, { topic, count })
+        .then(res => {
+          document.getElementById("brainstormResult").innerHTML = res.data.ideas.replace(/\n/g, '<br>');
+        })
+        .catch(err => handleError(err, "brainstormResult"));
+    }
+
+          // 6. 시 쓰기
+    function writePoem() {
+      const topic = document.getElementById("poemTopic").value.trim();
+      const style = document.getElementById("poemStyle").value.trim() || "현대시";
+      if (!topic) return;
+      document.getElementById("poemResult").innerHTML = "시를 짓는 중...";
+
+      axios.post(`/poem`, { topic, style })
+        .then(res => {
+          document.getElementById("poemResult").innerHTML = res.data.poem.replace(/\n/g, '<br>');
+        })
+        .catch(err => handleError(err, "poemResult"));
+    }
+
+    // 7. 레시피 생성
+    function generateRecipe() {
+      const ingredients = document.getElementById("recipeIngredients").value.trim();
+      const servings = parseInt(document.getElementById("recipeServings").value);
+      const difficulty = document.getElementById("recipeDifficulty").value;
+      if (!ingredients) return;
+      document.getElementById("recipeResult").innerHTML = "레시피 생성 중...";
+
+      axios.post(`/recipe`, { ingredients, servings, difficulty })
+        .then(res => {
+          document.getElementById("recipeResult").innerHTML = res.data.recipe.replace(/\n/g, '<br>');
+        })
+        .catch(err => handleError(err, "recipeResult"));
+    }
+
+    // 8. 이름 제안
+    function suggestNames() {
+      const category = document.getElementById("nameCategory").value;
+      const gender = document.getElementById("nameGender").value;
+      const vibe = document.getElementById("nameVibe").value.trim();
+      const count = parseInt(document.getElementById("nameCount").value);
+
+      document.getElementById("namesResult").innerHTML = "이름 제안 중...";
+
+      axios.post(`/names`, { category, gender, count, vibe })
+        .then(res => {
+          document.getElementById("namesResult").innerHTML = res.data.names.replace(/\n/g, '<br>');
+        })
+        .catch(err => handleError(err, "namesResult"));
+    }
+
+  </script>
+</body>
+</html>

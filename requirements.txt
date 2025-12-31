@@ -1,0 +1,19 @@
+httpx
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+requests==2.32.3
+pydantic==2.9.2
+pydantic-settings==2.6.1
+
+# For optional Hugging Face GGUF download script:
+huggingface_hub==0.26.2
+Jinja2
+ollama
+redis==5.2.0
+
+# chroma-db
+chromadb==0.5.23
+pymupdf
+python-multipart
+
+prompt_toolkit

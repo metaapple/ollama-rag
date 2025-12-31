@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+
+<body>
+<a href="/ollama-test">ollama-test</a><br>
+<a href=/health>Health</a> <br>
+<a href=/chat?word=http+port>http기본 port</a> <br>
+<a href=/stream?word=한국정보>korea 정보(한글)</a> <br>
+<a href=/chat?word=bmw>bmw 정보</a> <br>
+
+<form method="get" action="/chat">
+    word: <input type="text" name="word" placeholder="english"><br>
+    <button type="submit">search</button>
+</form>
+
+<hr>
+    word: <input type="text" id="word" value="점심 뭐먹을까."><br>
+    <button id="under" type="button">아래에 답을 넣으려고 하는 경우</button>
+
+
+<hr>
+<div id="result" style="background:yellow; width:700px; height:500px;">
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+
+    // 버튼에 이벤트를 달아서 클릭했을 때 함수를 부르게 하자.
+    document.getElementById('under').addEventListener('click', function () {
+        // alert('클릭했음');
+
+        word = document.getElementById('word').value
+        //<input id='word' value="내가 입력한 데이터">
+
+        // 입력한 word를 가지고와서 axios로 보내야함.
+        // axios로 word를 get방식으로 보내고
+        axios.get('/chat?word=' + word).then(function (response){
+
+            // axios의 결과를 받아와서 id="result"인 곳에 넣어주자.
+            console.log(response) // {data : "내용이 들어있음"}
+            data = response.data
+            document.getElementById('result').textContent = data
+        });
+    });
+    //then은 http응답을 받아오면 then(익명함수(x)) 함수를 실행하라!
+    //x에는 http의 응답이 들어감.
+
+
+
+
+</script>
+</body>
+
+</html>
